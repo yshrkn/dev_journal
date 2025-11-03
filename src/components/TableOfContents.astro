@@ -1,0 +1,263 @@
+---
+// 目次コンポーネント - クライアントサイドで見出しを検出して目次を生成
+---
+
+<div class="table-of-contents">
+  <h3>目次</h3>
+  <ul id="toc-list" class="toc-list">
+    <!-- 見出しはJavaScriptで動的に生成 -->
+  </ul>
+</div>
+
+<style>
+  .table-of-contents {
+    /* サイドバーに統合されるため、独自のボックススタイルは削除 */
+  }
+  
+  .table-of-contents h3 {
+    margin: 0 0 1rem 0;
+    color: var(--accent);
+    font-size: 1.2rem;
+    border-bottom: 2px solid var(--accent);
+    padding-bottom: 0.5rem;
+  }
+  
+  .toc-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  
+  .toc-list li {
+    margin-bottom: 0.5rem;
+  }
+  
+  .toc-list a {
+    display: block;
+    padding: 0.5rem 0.75rem;
+    color: rgb(var(--text-primary));
+    text-decoration: none;
+    border-left: 3px solid transparent;
+    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    font-size: 0.875rem;
+    line-height: 1.4;
+    border-radius: 0.25rem;
+    margin-bottom: 0.25rem;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .toc-list a:hover:not(.active) {
+    color: var(--accent);
+    background: rgba(var(--accent), 0.06);
+    border-left-color: var(--accent);
+    border-left-width: 3px;
+    transform: translateX(2px);
+    box-shadow: 0 1px 4px rgba(var(--accent), 0.1);
+    border-radius: 0 6px 6px 0;
+  }
+  
+
+  
+
+  
+
+  
+  /* 見出しレベルに応じたインデント */
+  .toc-list .level-2 { margin-left: 0; }
+  .toc-list .level-3 { 
+    margin-left: 1rem; 
+  }
+  .toc-list .level-4 { 
+    margin-left: 1.75rem; 
+  }
+  .toc-list .level-5 { 
+    margin-left: 2.5rem; 
+  }
+  .toc-list .level-6 { 
+    margin-left: 3.25rem; 
+  }
+  
+  /* レベル別のスタイル調整 */
+  .toc-list .level-3 a {
+    font-size: 0.825rem;
+    opacity: 0.9;
+  }
+  
+  .toc-list .level-4 a {
+    font-size: 0.8rem;
+    opacity: 0.85;
+  }
+  
+  .toc-list .level-5 a,
+  .toc-list .level-6 a {
+    font-size: 0.775rem;
+    opacity: 0.8;
+  }
+  
+  .no-headings {
+    color: rgb(var(--text-secondary));
+    font-style: italic;
+    text-align: center;
+    padding: 1rem 0;
+  }
+</style>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const tocList = document.getElementById('toc-list');
+    if (!tocList) return;
+    
+    // 記事内の見出しを取得（h2〜h6）
+    const headings = document.querySelectorAll('.prose h2, .prose h3, .prose h4, .prose h5, .prose h6');
+    
+    if (headings.length === 0) {
+      tocList.innerHTML = '<li class="no-headings">見出しがありません</li>';
+      return;
+    }
+    
+    // 各見出しにIDを付与（存在しない場合）
+    headings.forEach((heading, index) => {
+      if (!heading.id) {
+        // 見出しテキストからIDを生成
+        const text = heading.textContent || '';
+        const id = `heading-${index}-${text.toLowerCase()
+          .replace(/[^\w\s\-]/g, '') // 特殊文字を除去
+          .replace(/\s+/g, '-')      // スペースをハイフンに変換
+          .slice(0, 50)}`;           // 50文字で切り詰め
+        heading.id = id;
+      }
+    });
+    
+    // 目次のHTMLを生成
+    const tocItems = Array.from(headings).map(heading => {
+      const level = heading.tagName.toLowerCase();
+      const text = heading.textContent || '';
+      const id = heading.id;
+      
+      return `
+        <li class="level-${level.charAt(1)}">
+          <a href="#${id}" class="toc-link" data-target="${id}">
+            ${text}
+          </a>
+        </li>
+      `;
+    }).join('');
+    
+    tocList.innerHTML = tocItems;
+    
+    // スムーススクロール機能（ヘッダーオフセット考慮）
+    const tocLinks = tocList.querySelectorAll('.toc-link');
+    const headerHeight = 64; // ヘッダーの高さ
+    const additionalOffset = 20; // 追加の余白
+    
+    tocLinks.forEach(link => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const targetId = link.getAttribute('data-target');
+        if (!targetId) return;
+        const targetElement = document.getElementById(targetId);
+        
+        if (targetElement) {
+          const elementPosition = targetElement.offsetTop;
+          const offsetPosition = elementPosition - headerHeight - additionalOffset;
+          
+          window.scrollTo({
+            top: offsetPosition,
+            behavior: 'smooth'
+          });
+        }
+      });
+    });
+    
+    // アクティブな見出しのハイライト機能（完全版）
+    let currentActiveId = '';
+    
+    const updateActiveHeading = () => {
+      const scrollTop = window.scrollY;
+      const windowHeight = window.innerHeight;
+      const offset = headerHeight + 50; // ヘッダー高さ + 余白
+      let activeId = null;
+      
+      // 各見出しの位置を計算して、現在表示されている見出しを特定
+      const headingPositions = Array.from(headings).map(heading => {
+        const element = heading as HTMLElement;
+        return {
+          id: element.id,
+          top: element.offsetTop,
+          element: element
+        };
+      });
+      
+      // スクロール位置に基づいて最適な見出しを選択
+      for (let i = 0; i < headingPositions.length; i++) {
+        const current = headingPositions[i];
+        const next = headingPositions[i + 1];
+        
+        // 現在の見出しがビューポート内にある場合
+        if (scrollTop + offset >= current.top) {
+          activeId = current.id;
+          
+          // 次の見出しがある場合、それより手前にいるかチェック
+          if (next && scrollTop + offset < next.top) {
+            break;
+          }
+        }
+      }
+      
+      // 最上部にいる場合は最初の見出し
+      if (!activeId && headingPositions.length > 0 && scrollTop < headingPositions[0].top) {
+        activeId = headingPositions[0].id;
+      }
+      
+      // アクティブ見出しが変わった場合のみ更新
+      if (activeId && activeId !== currentActiveId) {
+        currentActiveId = activeId;
+        
+        // すべてのリンクから active クラスを削除
+        const allLinks = tocList.querySelectorAll('.toc-link');
+        allLinks.forEach(link => link.classList.remove('active'));
+        
+        // 新しいアクティブリンクに active クラスを追加
+        const activeLink = tocList.querySelector(`[data-target="${activeId}"]`);
+        if (activeLink) {
+          activeLink.classList.add('active');
+        }
+      }
+    };
+    
+    // 初期実行（段階的に確実に実行）
+    updateActiveHeading();
+    setTimeout(() => updateActiveHeading(), 50);
+    setTimeout(() => updateActiveHeading(), 200);
+    setTimeout(() => updateActiveHeading(), 500);
+    
+    // スクロールイベントを追加（スムーズな更新）
+    let scrollTimer: ReturnType<typeof setTimeout> | undefined;
+    window.addEventListener('scroll', () => {
+      clearTimeout(scrollTimer);
+      scrollTimer = setTimeout(() => {
+        updateActiveHeading();
+      }, 16); // 約60fps
+    }, { passive: true });
+    
+    // リサイズイベントも追加
+    window.addEventListener('resize', () => {
+      setTimeout(() => updateActiveHeading(), 100);
+    }, { passive: true });
+    
+    // ページの読み込み完了後にも実行
+    window.addEventListener('load', () => {
+      setTimeout(() => updateActiveHeading(), 100);
+    });
+    
+    // BackToTopボタンのクリック時の強制更新
+    window.addEventListener('forceUpdateTOC', () => {
+      setTimeout(() => updateActiveHeading(), 50);
+      setTimeout(() => updateActiveHeading(), 200);
+      setTimeout(() => updateActiveHeading(), 500);
+    });
+    
+
+  });
+</script>

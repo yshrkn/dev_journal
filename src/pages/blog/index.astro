@@ -1,114 +1,136 @@
 ---
-import { Image } from 'astro:assets';
 import { getCollection } from 'astro:content';
-import BaseHead from '../../components/BaseHead.astro';
-import Footer from '../../components/Footer.astro';
-import FormattedDate from '../../components/FormattedDate.astro';
-import Header from '../../components/Header.astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
 import { SITE_DESCRIPTION, SITE_TITLE } from '../../consts';
+import BlogCard from '../../components/BlogCard.astro';
 
 const posts = (await getCollection('blog')).sort(
 	(a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf(),
 );
 ---
 
-<!doctype html>
-<html lang="en">
-	<head>
-		<BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
-		<style>
-			main {
-				width: 960px;
-			}
-			ul {
-				display: flex;
-				flex-direction: column;
-				align-items: center;
-				flex-wrap: wrap;
-				list-style-type: none;
-				margin: 0;
-				padding: 0;
-			}
-			ul li {
-				width: 100%;
-				padding: 10px;
-			}
-			ul li + li {
-				border-top: 1px solid gainsboro;
-			}
-			ul li * {
-				text-decoration: none;
-				transition: 0.2s ease;
-			}
-			ul li:first-child {
-				width: 100%;
-				margin-bottom: 1rem;
-				text-align: center;
-			}
-			ul li:first-child img {
-				width: 100%;
-			}
-			ul li:first-child .title {
-				font-size: 2.369rem;
-			}
-			ul li img {
-				margin-bottom: 0.5rem;
-				border-radius: 12px;
-			}
-			ul li a {
-				display: block;
-			}
-			.title {
-				margin: 0;
-				color: rgb(var(--black));
-				line-height: 1;
-			}
-			.date {
-				margin: 0;
-				color: rgb(var(--gray));
-			}
-			ul li a:hover h4,
-			ul li a:hover .date {
-				color: rgb(var(--accent));
-			}
-			ul a:hover img {
-				box-shadow: var(--box-shadow);
-			}
-			@media (max-width: 720px) {
+<BaseLayout title={SITE_TITLE} description={SITE_DESCRIPTION} maxWidth="wide">
+  <div class="blog-index">
+    <header class="page-header">
+      <h1>最新の記事</h1>
+      <p class="page-description">技術に関する記事やメモを公開しています</p>
+    </header>
 
-				ul li {
-					width: 100%;
-					text-align: center;
-				}
-				ul li:first-child {
-					margin-bottom: 0;
-				}
-				ul li:first-child .title {
-					font-size: 1.563em;
-				}
-			}
-		</style>
-	</head>
-	<body>
-		<Header />
-		<main>
-			<section>
-				<ul>
-					{
-						posts.map((post) => (
-							<li>
-								<a href={`${import.meta.env.BASE_URL}/blog/${post.id}/`}>
-									<h4 class="title">{post.data.title}</h4>
-									<p class="date">
-										<FormattedDate date={post.data.pubDate} />
-									</p>
-								</a>
-							</li>
-						))
-					}
-				</ul>
-			</section>
-		</main>
-		<Footer />
-	</body>
-</html>
+    {posts.length === 0 ? (
+      <div class="no-posts">
+        <h3>記事はまだ投稿されていません</h3>
+        <p>新しい記事が投稿されるまでお待ちください。</p>
+      </div>
+    ) : (
+      <div class="posts-grid">
+        {posts.map((post) => (
+          <div class="post-item">
+            <BlogCard post={post} />
+          </div>
+        ))}
+      </div>
+    )}
+  </div>
+
+  <style>
+    .blog-index {
+      max-width: 100%;
+      width: 100%;
+    }
+    
+    .page-header {
+      text-align: center;
+      margin-bottom: 3rem;
+      padding: 2rem;
+      background: rgb(var(--surface));
+      border-radius: var(--border-radius-lg);
+      border: 1px solid rgb(var(--border));
+    }
+    
+    .page-header h1 {
+      margin: 0 0 1rem 0;
+      font-size: 2.5rem;
+      font-weight: 700;
+      color: rgb(var(--text-primary));
+    }
+    
+    .page-description {
+      margin: 0;
+      color: rgb(var(--text-secondary));
+      font-size: 1.125rem;
+    }
+    
+    .posts-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 2rem;
+      width: 100%;
+      max-width: 100%;
+    }
+    
+    @media (min-width: 768px) {
+      .posts-grid {
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      }
+    }
+    
+    @media (min-width: 1024px) {
+      .posts-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+    
+    @media (max-width: 767px) {
+      .posts-grid {
+        gap: 1.5rem;
+      }
+      
+      .page-header {
+        padding: 1.5rem;
+      }
+      
+      .page-header h1 {
+        font-size: 2rem;
+      }
+    }
+    
+    @media (max-width: 480px) {
+      .posts-grid {
+        gap: 1rem;
+      }
+      
+      .page-header {
+        padding: 1rem;
+      }
+      
+      .page-header h1 {
+        font-size: 1.75rem;
+      }
+    }
+    
+    .post-item {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      max-width: 100%;
+    }
+    
+    .no-posts {
+      text-align: center;
+      padding: 3rem 2rem;
+      background: rgb(var(--surface));
+      border-radius: var(--border-radius-lg);
+      border: 1px solid rgb(var(--border));
+    }
+    
+    .no-posts h3 {
+      margin: 0 0 1rem 0;
+      color: rgb(var(--text-primary));
+    }
+    
+    .no-posts p {
+      margin: 0;
+      color: rgb(var(--text-secondary));
+    }
+  </style>
+</BaseLayout>

@@ -1,0 +1,117 @@
+---
+// ページトップへ戻るボタンコンポーネント
+---
+
+<button id="back-to-top" class="back-to-top" aria-label="ページトップへ戻る">
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M12 19V5M5 12L12 5L19 12" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+</button>
+
+<style>
+  .back-to-top {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    width: 50px;
+    height: 50px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 16px rgba(59, 130, 246, 0.3);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(20px);
+    transition: all 0.3s ease;
+    z-index: 1000;
+  }
+  
+  .back-to-top svg {
+    width: 24px;
+    height: 24px;
+    stroke-width: 2.5;
+    fill: none;
+    stroke: white;
+  }
+  
+  .back-to-top.visible {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+  }
+  
+  .back-to-top:hover {
+    background: var(--accent-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+  }
+  
+  .back-to-top:active {
+    transform: translateY(0);
+  }
+  
+  @media (max-width: 768px) {
+    .back-to-top {
+      bottom: 1rem;
+      right: 1rem;
+      width: 45px;
+      height: 45px;
+    }
+    
+    .back-to-top svg {
+      width: 20px;
+      height: 20px;
+    }
+  }
+</style>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const backToTopButton = document.getElementById('back-to-top');
+    
+    if (!backToTopButton) return;
+    
+    // スクロール時の表示/非表示制御
+    const toggleButtonVisibility = () => {
+      if (window.scrollY > 300) {
+        backToTopButton.classList.add('visible');
+      } else {
+        backToTopButton.classList.remove('visible');
+      }
+    };
+    
+    // ボタンクリック時のスムーススクロール
+    const scrollToTop = () => {
+      window.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+      });
+      
+      // スクロール完了を検出して目次を更新
+      let scrollCheckCount = 0;
+      const checkScrollComplete = () => {
+        scrollCheckCount++;
+        if (window.scrollY === 0 || scrollCheckCount > 20) {
+          // スクロール完了時に目次更新
+          window.dispatchEvent(new CustomEvent('forceUpdateTOC'));
+        } else {
+          setTimeout(checkScrollComplete, 50);
+        }
+      };
+      
+      setTimeout(checkScrollComplete, 100);
+    };
+    
+    // イベントリスナーの追加
+    window.addEventListener('scroll', toggleButtonVisibility);
+    backToTopButton.addEventListener('click', scrollToTop);
+    
+    // 初期状態の設定
+    toggleButtonVisibility();
+  });
+</script>

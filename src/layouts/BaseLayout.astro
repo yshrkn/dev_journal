@@ -1,0 +1,159 @@
+---
+import BaseHead from '../components/BaseHead.astro'
+import Header from '../components/Header.astro'
+import Footer from '../components/Footer.astro'
+import BackToTop from '../components/BackToTop.astro'
+
+export interface Props {
+  title: string
+  description: string
+  showSidebar?: boolean
+  maxWidth?: 'narrow' | 'wide' | 'full'
+}
+
+const { title, description, showSidebar = false, maxWidth = 'narrow' } = Astro.props
+
+const containerClass = {
+  narrow: 'container-narrow',
+  wide: 'container-wide', 
+  full: 'container-full'
+}[maxWidth]
+---
+
+<html lang="ja">
+  <head>
+    <BaseHead title={title} description={description} />
+    <style>
+      .layout {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+      
+      .main-wrapper {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+      }
+      
+      .container-narrow {
+        max-width: 768px;
+        margin: 0 auto;
+        padding: 0 1rem;
+      }
+      
+      .container-wide {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 1rem;
+      }
+      
+      .container-full {
+        width: 100%;
+        padding: 0 1rem;
+      }
+      
+      .content-area {
+        display: grid;
+        gap: 2rem;
+        margin: 2rem 0;
+      }
+      
+      .content-with-sidebar {
+        grid-template-columns: 1fr 300px;
+      }
+      
+      .content-only {
+        grid-template-columns: 1fr;
+      }
+      
+      @media (max-width: 1024px) {
+        .content-with-sidebar {
+          grid-template-columns: 1fr;
+          gap: 2rem;
+        }
+      }
+      
+      @media (max-width: 768px) {
+        .content-area {
+          margin: 1.5rem 0;
+          gap: 1.5rem;
+        }
+        
+        .container-narrow,
+        .container-wide {
+          padding: 0 1rem;
+        }
+      }
+      
+      @media (max-width: 480px) {
+        .content-area {
+          margin: 1rem 0;
+          gap: 1rem;
+        }
+        
+        .container-narrow,
+        .container-wide {
+          padding: 0 1rem;
+        }
+      }
+      
+      main {
+        width: 100%;
+        max-width: 100%;
+        margin: 0;
+        padding: 0;
+        min-width: 0;
+        box-sizing: border-box;
+      }
+      
+      .layout {
+        width: 100%;
+        max-width: 100vw;
+      }
+      
+      .main-wrapper {
+        overflow: visible;
+      }
+      
+      .sidebar-area {
+        width: 100%;
+        height: fit-content;
+      }
+      
+      @media (min-width: 1025px) {
+        .sidebar-area {
+          position: -webkit-sticky;
+          position: sticky;
+          top: calc(var(--header-height) + 2rem);
+          align-self: start;
+          max-height: calc(100vh - var(--header-height) - 4rem);
+          overflow-y: auto;
+          z-index: 10;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="layout">
+      <Header />
+      <div class="main-wrapper">
+        <div class={containerClass}>
+          <div class={`content-area ${showSidebar ? 'content-with-sidebar' : 'content-only'}`}>
+            <main>
+              <slot />
+            </main>
+            {showSidebar && (
+              <div class="sidebar-area">
+                <slot name="sidebar" />
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+      <Footer />
+      <BackToTop />
+    </div>
+  </body>
+</html>

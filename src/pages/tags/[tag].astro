@@ -1,0 +1,166 @@
+---
+import { getCollection } from 'astro:content'
+import BlogCard from '../../components/BlogCard.astro'
+import BaseLayout from '../../layouts/BaseLayout.astro'
+
+// ✅ すべてのタグページを静的生成する
+export async function getStaticPaths() {
+  const allPosts = await getCollection('blog')
+
+  // タグを全て収集して重複を除去
+  const uniqueTags = Array.from(
+    new Set(allPosts.flatMap((post) => post.data.tags ?? []))
+  )
+
+  // 各タグに対応する記事リストを返す
+  return uniqueTags.map((tag) => ({
+    params: { tag },
+    props: {
+      posts: allPosts
+        .filter((post) => post.data.tags?.includes(tag))
+        .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf()),
+    },
+  }))
+}
+
+// ✅ 各タグページで受け取る
+const { tag } = Astro.params
+const { posts } = Astro.props
+---
+
+<BaseLayout title={`#${tag} - タグ別記事一覧`} description={`${tag}タグが付けられた記事の一覧です。`} maxWidth="narrow">
+  <div class="tag-page">
+    <nav class="breadcrumb">
+      <a href={`${import.meta.env.BASE_URL}/tags/`} class="back-link">
+        ← タグ一覧に戻る
+      </a>
+    </nav>
+    
+    <header class="page-header">
+      <h1 class="tag-title">#{tag}</h1>
+      <p class="post-count">{posts.length}件の記事</p>
+    </header>
+
+    {posts.length === 0 ? (
+      <div class="no-posts">
+        <div class="empty-state">
+          <h3>このタグの記事はまだありません</h3>
+          <p>新しい記事が投稿されるまでお待ちください。</p>
+        </div>
+      </div>
+    ) : (
+      <div class="posts-grid">
+        {posts.map((post) => (
+          <div class="post-item">
+            <BlogCard post={post} />
+          </div>
+        ))}
+      </div>
+    )}
+  </div>
+
+  <style>
+    .tag-page {
+      max-width: 100%;
+    }
+    
+    .breadcrumb {
+      margin-bottom: 2rem;
+    }
+    
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.75rem 1rem;
+      background: rgb(var(--surface));
+      color: var(--accent);
+      text-decoration: none;
+      border-radius: var(--border-radius);
+      border: 1px solid rgb(var(--border));
+      font-weight: 500;
+      transition: all 0.2s ease;
+    }
+    
+    .back-link:hover {
+      background: var(--accent);
+      color: white;
+      transform: translateX(-2px);
+    }
+    
+    .page-header {
+      text-align: center;
+      margin-bottom: 3rem;
+      padding: 2rem;
+      background: rgb(var(--surface));
+      border-radius: var(--border-radius-lg);
+      border: 1px solid rgb(var(--border));
+    }
+    
+    .tag-title {
+      margin: 0 0 1rem 0;
+      font-size: 2.5rem;
+      font-weight: 800;
+      color: var(--accent);
+      background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    
+    .post-count {
+      margin: 0;
+      color: rgb(var(--text-secondary));
+      font-size: 1.125rem;
+    }
+    
+    .posts-grid {
+      display: grid;
+      gap: 1.5rem;
+    }
+    
+    .post-item {
+      background: rgb(var(--surface));
+      border-radius: var(--border-radius-lg);
+      border: 1px solid rgb(var(--border));
+      overflow: hidden;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    
+    .post-item:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--box-shadow-lg);
+    }
+    
+    .no-posts {
+      margin-top: 3rem;
+    }
+    
+    .empty-state {
+      text-align: center;
+      padding: 3rem 2rem;
+      background: rgb(var(--surface));
+      border-radius: var(--border-radius-lg);
+      border: 1px solid rgb(var(--border));
+    }
+    
+    .empty-state h3 {
+      margin: 0 0 1rem 0;
+      color: rgb(var(--text-primary));
+    }
+    
+    .empty-state p {
+      margin: 0;
+      color: rgb(var(--text-secondary));
+    }
+    
+    @media (max-width: 768px) {
+      .tag-title {
+        font-size: 2rem;
+      }
+      
+      .page-header {
+        padding: 1.5rem;
+      }
+    }
+  </style>
+</BaseLayout>
